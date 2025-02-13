@@ -1,59 +1,66 @@
 
 // Global Variable Declaration
 
-let lastUrl = ""
-let problemDetails = {}
-let XhrRequestData = ""
-const recognition = new webkitSpeechRecognition() || new SpeechRecognition();
-recognition.lang = 'en-IN';
-recognition.continuous = false;
-recognition.interimResults = false;
+let lastUrl = "" // Stores the last visited URL to detect page changes
+let problemDetails = {} // Object to store problem-related details
+let XhrRequestData = "" // Stores data fetched via an XHR request
+
+const recognition = new webkitSpeechRecognition() || new SpeechRecognition(); // Initializes speech recognition (Chrome/Web API)
+recognition.lang = 'en-IN'; // Sets recognition language to English (India)
+recognition.continuous = false; // Stops recognition after a single speech input
+recognition.interimResults = false; // Returns only final results, not partial ones
+
 
 
 // Mutation observe and function to detect page change , and problem page
-
+//Checks if the required problem elements (title and description) are loaded on the page.Ensures that the chatbot interacts only when these elements are available.
 function areRequiredElementsLoaded() {
+  // Extracts the problem title from the page
   const problemTitle = document.getElementsByClassName("Header_resource_heading__cpRp1")[0]?.textContent.trim();
+  // Extracts the problem description from the page
   const problemDescription = document.getElementsByClassName("coding_desc__pltWY")[0]?.textContent.trim();
-
+  // Returns true if both elements are found, otherwise false
   return (
     problemTitle &&
     problemDescription
   );
 }
-
+// Checks if the current page URL has changed since the last check. This helps detect when the user navigates to a new problem page.
 function isUrlChanged() {
-  const currentUrl = window.location.pathname;
-  if (currentUrl !== lastUrl) {
-    lastUrl = currentUrl;
-    return true;
+  const currentUrl = window.location.pathname; // Gets the current page URL path
+  if (currentUrl !== lastUrl) { // Checks if the URL has changed
+    lastUrl = currentUrl;       // Updates lastUrl to the new URL
+    return true;                
   }
   return false;
 }
 
+//Checks if the current page is a problem page based on the URL structure.The expected URL format is "/problems/{problem-id}".
 function isProblemsPage() {
-  const pathParts = window.location.pathname.split("/");
-  return pathParts.length >= 3 && pathParts[1] === "problems" && pathParts[2];
+  const pathParts = window.location.pathname.split("/"); // Splits the URL path into an array
+  return pathParts.length >= 3 && pathParts[1] === "problems" && pathParts[2]; // Checks if the URL has at least 3 parts and follows the "/problems/{problem-id}" format
 }
 
+//observes changes in the DOM and injects the chatbot when necessary. Ensures the chatbot appears only on problem pages and updates when the URL changes.
 const observer = new MutationObserver((mutations) => {
   mutations.forEach((mutation) => {
-    injectScript();
-    if (mutation.type === "childList" && isProblemsPage()) {
-      if (isUrlChanged() || !document.getElementById("help-button")) {
+    injectScript();// Injects the necessary script into the page
+    if (mutation.type === "childList" && isProblemsPage()) { // Checks if a new element was added to the DOM and the page is a problem page
+      if (isUrlChanged() || !document.getElementById("help-button")) { // If the URL has changed or the help button is missing, reinitialize elements
        
-        if (areRequiredElementsLoaded()) {
-          cleanElements();
-          createElement();
+        if (areRequiredElementsLoaded()) {  // Ensures required elements (problem title & description) are loaded before proceeding
+          cleanElements(); // Removes existing chatbot elements
+          createElement(); // Creates and injects the chatbot UI
         }
       }
     }
   });
 });
 
+//Starts observing changes in the entire page (DOM mutations).
 observer.observe(document.body, {
-  childList: true,
-  subtree: true,
+  childList: true, // Watches for direct child elements being added/removed
+  subtree: true,  // Watches for direct child elements being added/removed
 });
 
 // Mutation Observer Done
